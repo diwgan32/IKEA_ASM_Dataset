@@ -75,6 +75,27 @@ def get_absolute_depth(img, min_depth_val=0.0, max_depth_val = 4500, colormap='j
     absolute_depth_frame = absolute_depth_frame * float(max_depth_val/255.0)
     return absolute_depth_frame.astype(np.uint16)
 
+def get_list_of_all_files(dir_path, file_type='.jpg'):
+    '''
+    get a list of all files of a given type in input_path directory
+    :param dir_path: parent directory (in which to get the file list)
+    :return:
+    allFiles: list of files in input_path
+    '''
+    listOfFile = os.listdir(dir_path)
+    allFiles = list()
+    # Iterate over all the entries
+    for entry in listOfFile:
+        # Create full path
+        fullPath = os.path.join(dir_path, entry)
+        # If entry is a directory then get the list of files in this directory
+        if os.path.isdir(fullPath):
+            allFiles = allFiles + get_list_of_all_files(fullPath, file_type=file_type)
+        else:
+            if fullPath.endswith(file_type):
+                allFiles.append(fullPath)
+
+    return allFiles
 
 def extract_frames(scan, dataset_path, out_path, fps=25, video_format='avi'):
     """
