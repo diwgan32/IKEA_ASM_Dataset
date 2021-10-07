@@ -15,6 +15,18 @@ def get_subdirs(input_path):
     subdirs.sort()
     return subdirs
 
+def get_files(input_path, file_type='.png'):
+    '''
+    get a list of files in input_path directory
+    :param input_path: parent directory (in which to get the file list)
+    :return:
+    files: list of files in input_path
+    '''
+    files = [os.path.join(input_path, file_i) for file_i in os.listdir(input_path)
+               if os.path.isfile(os.path.join(input_path, file_i)) and file_i.endswith(file_type)]
+    files.sort()
+    return files
+    
 def get_scan_list(input_path, devices='all'):
     '''
     get_scan_list retreieves all of the subdirectories under the dataset main directories:
@@ -75,6 +87,23 @@ def get_absolute_depth(img, min_depth_val=0.0, max_depth_val = 4500, colormap='j
     absolute_depth_frame = absolute_depth_frame * float(max_depth_val/255.0)
     return absolute_depth_frame.astype(np.uint16)
 
+
+def get_gt_dirs(input_path, camera_id='dev3'):
+    """Get all directories with ground-truth 2D human pose annotations
+    """
+    gt_path_list = []
+    category_path_list = get_subdirs(input_path)
+    for category in category_path_list:
+        if os.path.basename(category) != 'Calibration':
+            category_scans = get_subdirs(category)
+            for category_scan in category_scans:
+                device_list = get_subdirs(category_scan)
+                for device_path in device_list:
+                    if camera_id in device_path:
+                        if os.path.exists(os.path.join(device_path, 'pose3d')): # 2D annotations exist
+                            gt_path_list.append(device_path) # eg <root>/Lack_TV_Bench/0007_white_floor_08_04_2019_08_28_10_47/dev3
+    return gt_path_list
+
 def get_list_of_all_files(dir_path, file_type='.jpg'):
     '''
     get a list of all files of a given type in input_path directory
@@ -96,6 +125,49 @@ def get_list_of_all_files(dir_path, file_type='.jpg'):
                 allFiles.append(fullPath)
 
     return allFiles
+
+
+def get_rgb_ins_params(param_file):
+    '''
+    read the rgb intrinsic parameters file
+    :param param_file: path to depth intrinsic parameters file DepthIns.txt
+    :return:
+    rgb_ins_params: a libfreenect2 ColorCameraParams object
+    '''
+    with open(param_file, 'r') as f:
+        rgb_ins_params = [float(line.strip()) for line in f if line]
+
+    rgb_camera_params_obj = {
+        "fx" : rgb_ins_params[0],
+        "fy" : rgb_ins_params[1],
+        "cx" : rgb_ins_params[2],
+        "cy" : rgb_ins_params[3],
+
+        "shift_d" : rgb_ins_params[4],
+        "shift_m" : rgb_ins_params[5],
+        "mx_x3y0" : rgb_ins_params[6],
+        "mx_x0y3" : rgb_ins_params[7],
+        "mx_x2y1" : rgb_ins_params[8],
+        "mx_x1y2" : rgb_ins_params[9],
+        "mx_x2y0" : rgb_ins_params[10],
+        "mx_x0y2" : rgb_ins_params[11],
+        "mx_x1y1" : rgb_ins_params[12],
+        "mx_x1y0" : rgb_ins_params[13],
+        "mx_x0y1" : rgb_ins_params[14],
+        "mx_x0y0" : rgb_ins_params[15],
+
+        "my_x3y0" : rgb_ins_params[16],
+        "my_x0y3" : rgb_ins_params[17],
+        "my_x2y1" : rgb_ins_params[18],
+        "my_x1y2" : rgb_ins_params[19],
+        "my_x2y0" : rgb_ins_params[20],
+        "my_x0y2" : rgb_ins_params[21],
+        "my_x1y1" : rgb_ins_params[22],
+        "my_x1y0" : rgb_ins_params[23],
+        "my_x0y1" : rgb_ins_params[24],
+        "my_x0y0" : rgb_ins_params[25]
+    }
+    return rgb_camera_params_obj
 
 def extract_frames(scan, dataset_path, out_path, fps=25, video_format='avi'):
     """
