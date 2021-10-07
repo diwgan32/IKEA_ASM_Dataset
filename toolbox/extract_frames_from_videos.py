@@ -2,6 +2,7 @@ import argparse
 import os
 import cv2
 import tb_file_utils as utils
+import multiprocessing
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_path', type=str, default='/mnt/sitzikbs_storage/Datasets/ANU_ikea_dataset_processed',
