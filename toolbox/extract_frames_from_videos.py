@@ -2,7 +2,21 @@ import argparse
 import os
 import cv2
 import tb_file_utils as utils
+from multiprocessing import Process
+import random
 
+def partition (list_in, n):
+    random.shuffle(list_in)
+    return [list_in[i::n] for i in range(n)]
+
+def process(scan_list, machine_num, args):
+    i = 0
+    for scan in scan_list:
+        utils.extract_frames(scan, args.dataset_path, args.output_path)
+        print(f"Completed {i} of {len(scan_list)} on machine {machine_num}")
+        i += 1
+
+NUM_CPUS = 32
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_path', type=str, default='/mnt/sitzikbs_storage/Datasets/ANU_ikea_dataset_processed',
                     help='path to the ANU IKEA assembly video dataset')
@@ -21,11 +35,17 @@ print('Individual frames dataset will be saved to ' + args.output_path)
 
 
 os.makedirs(args.output_path, exist_ok=True)
-for scan_list in [rgb_path_list, depth_path_list, normals_path_list]:
-    num_cores = multiprocessing.cpu_count()
-    Parallel(n_jobs=num_cores)(delayed(utils.extract_frames(scan, args.dataset_path,
-                                                            args.output_path) for scan, _ in enumerate(scan_list)))
+for scan_list in [depth_path_list, normals_path_list]:
+    #num_cores = multiprocessing.cpu_count()
+    #multiprocessing.Parallel(n_jobs=num_cores)(delayed(utils.extract_frames(scan, args.dataset_path,
+    #                                                        args.output_path) for scan, _ in enumerate(scan_list)))
     # # Non-parallel implementation
-    # for scan in scan_list:
-    #     utils.extract_frames(scan, args.dataset_path, args.output_path)
+    partitioned_list = partition(scan_list, NUM_CPUS)
+    processes = []
+    for i in range(NUM_CPUS):
+        processes.append(Process(target=process, args=(partitioned_list[i], i, args)))
+    for p in processes:
+        p.start()
+    for p in processes:
+        p.join()
 

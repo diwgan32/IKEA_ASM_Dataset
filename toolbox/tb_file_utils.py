@@ -1,7 +1,7 @@
 import argparse
 import os
 import cv2
-
+import numpy as np
 
 def get_subdirs(input_path):
     '''

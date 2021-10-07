@@ -19,7 +19,6 @@ torchvision==0.7.0
 pyrender==0.1.43
 requests==2.24.0
 matplotlib==3.2.2
-caffe2==0.8.1
 cityscapesscripts==2.0.0
 dataclasses==0.7
 filterpy==1.4.5
